@@ -2,7 +2,7 @@ bl_info = {
     "name": "Name Utilities",
     "description": "Mesh and Object name helper",
     "author": "Sylwester Moniuszko-Szymanski",
-    "version": (0, 0, 1),
+    "version": (0, 0, 2),
     "blender": (2, 80, 0),
     "location": "3D View > Object Tools",
     "warning": "", # used for warning icon and text in addons panel
@@ -68,10 +68,32 @@ class NameCheckDialog(bpy.types.Operator):
 #    Operators
 # ------------------------------------------------------------------------
 
+class WM_OT_RenamePartial(Operator):
+    bl_label = "Rename Partially"
+    bl_idname = "wm.partial_rename"
+    bpy.types.Scene.fromProp = bpy.props.StringProperty(name="From: ")
+    bpy.types.Scene.toProp = bpy.props.StringProperty(name="To: ")
+    
+    def rename(self,context):
+          
+          for obj in bpy.context.selected_objects:
+              print(obj.name)
+              newName = obj.name.replace(context.scene.fromProp, context.scene.toProp)
+              obj.name = newName
+        
+     
+                      
+    
+    def execute(self, context):
+         self.rename(context)
+         return {'FINISHED'}
+          
+            
+        
+
 class WM_OT_MatchMeshNames(Operator):
     bl_label = "Match mesh names"
     bl_idname = "wm.mesh_renamer"
-    
     def execute(self, context):
         for obj in bpy.data.objects:
             obj.data.name=obj.name
@@ -89,7 +111,8 @@ class OBJECT_PT_ObjectToolPanel(Panel):
     bl_region_type = "UI"
     bl_category = "Object Tools"
     bl_context = "objectmode"   
-
+    
+    
 
     @classmethod
     def poll(self,context):
@@ -97,9 +120,23 @@ class OBJECT_PT_ObjectToolPanel(Panel):
 
     def draw(self, context):
         layout = self.layout
+        partialRenamerRow = layout.row()
+        partialRenamerRow.alignment  = "CENTER"
+        partialRenamerRow.label(text="-----Partial renamer-----")
+        layout.row()
+        col = self.layout.column(align = True)
+        col.prop(context.scene, "fromProp")
+        col2 = self.layout.column(align  = True)
+        col2.prop(context.scene, "toProp")
+        layout.operator("wm.partial_rename")
+        row = layout.row(align = True)
+        row.alignment  = "CENTER"
+        row.label(text="-----Name Utils-----")
+        
         layout.separator()
         layout.operator("wm.mesh_renamer")
         layout.separator()
+        
         layout.operator("object.dialog_operator")
         layout.separator()
 
@@ -108,10 +145,13 @@ class OBJECT_PT_ObjectToolPanel(Panel):
 # ------------------------------------------------------------------------
 
 classes = (
+    WM_OT_RenamePartial,
     WM_OT_MatchMeshNames,
     OBJECT_PT_ObjectToolPanel,
     NameCheckDialog
+  
 )
+
 
 def register():
     from bpy.utils import register_class
@@ -122,3 +162,5 @@ def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
+        
+   
